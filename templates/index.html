@@ -1,49 +1,64 @@
-<!-- index.html -->
 <!DOCTYPE html>
 <html lang="zh">
 <head>
     <meta charset="UTF-8">
     <title>文件上传与内容总结</title>
-    <!-- 引入jQuery库 -->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 </head>
 <body>
-    <!-- 表单允许用户上传文件和输入文本 -->
     <form id="upload-form" method="post" enctype="multipart/form-data">
         <label>上传文件:</label>
         <input type="file" name="text_file" id="text_file"><br>
         <label>输入文本:</label>
         <textarea name="text_input" id="text_input" rows="4" cols="50"></textarea><br>
-        <!-- 触发总结功能的按钮 -->
+        <label>希望概况的字数:</label>
+        <input type="number" name="summary_length" id="summary_length"><br>
+        <label>原文章字数:</label>
+        <span id="original_length">0</span> 字<br>
         <button type="button" id="summarize-btn">一键总结</button>
     </form>
-    <!-- 用于显示总结内容的区域 -->
     <div id="summary-output">总结内容将在这里显示。</div>
 
-    <!-- JavaScript代码处理表单提交和AJAX请求 -->
     <script>
         $(document).ready(function(){
-            $('#summarize-btn').click(function(){
-                // 创建FormData对象准备发送数据
-                var formData = new FormData();
-                var file_data = $('#text_file').prop('files')[0]; // 获取文件
-                var text_data = $('#text_input').val(); // 获取文本框输入
-                formData.append('file', file_data); // 添加文件到表单数据中
-                formData.append('text', text_data); // 添加文本到表单数据中
+            function updateOriginalLength() {
+                var text = $('#text_input').val() || '';
+                var file = $('#text_file').prop('files')[0];
+                if (file) {
+                    // 如果有文件，使用FileReader读取
+                    var reader = new FileReader();
+                    reader.onload = function(e) {
+                        var content = e.target.result;
+                        $('#original_length').text(content.length);
+                    };
+                    reader.readAsText(file);
+                } else {
+                    // 如果没有文件，直接使用文本框内容
+                    $('#original_length').text(text.length);
+                }
+            }
 
-                // 发送AJAX请求到服务器
+            $('#text_file, #text_input').on('change keyup', updateOriginalLength);
+
+            $('#summarize-btn').click(function(){
+                var formData = new FormData();
+                var file_data = $('#text_file').prop('files')[0];
+                var text_data = $('#text_input').val();
+                var summary_length = $('#summary_length').val();
+                formData.append('file', file_data);
+                formData.append('text', text_data);
+                formData.append('summary_length', summary_length);
+
                 $.ajax({
                     type: 'POST',
                     url: '/summarize',
                     data: formData,
                     contentType: false,
-                    processData: false, // 告诉jQuery不要处理发送的数据
+                    processData: false,
                     success: function(data) {
-                        // 请求成功，显示总结内容
                         $('#summary-output').text(data.summary);
                     },
                     error: function() {
-                        // 请求失败，显示错误信息
                         alert('生成总结时发生错误。');
                     }
                 });
