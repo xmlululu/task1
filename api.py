@@ -1,42 +1,185 @@
-# coding: utf-8
+import json
+
 from huaweicloudsdkcore.auth.credentials import BasicCredentials
 from huaweicloudsdknlp.v2.region.nlp_region import NlpRegion
 from huaweicloudsdkcore.exceptions import exceptions
-from huaweicloudsdknlp.v2 import *
-from selenium import webdriver
-from selenium.common.exceptions import TimeoutException
-from selenium.webdriver.common.by import By
-from selenium.webdriver.edge.options import Options
-from selenium.webdriver.support import expected_conditions as EC
+# from huaweicloudsdknlp.v2 import *
+from huaweicloudsdknlp.v2.model.summary_req import SummaryReq
+from huaweicloudsdknlp.v2.model.run_summary_request import RunSummaryRequest
+from huaweicloudsdknlp.v2 import NlpClient
+from huaweicloud_sis.client.asr_client import AsrCustomizationClient
+from huaweicloud_sis.bean.asr_request import AsrCustomLongRequest
+from huaweicloud_sis.exception.exceptions import ClientException
+from huaweicloud_sis.exception.exceptions import ServerException
+from huaweicloud_sis.bean.sis_config import SisConfig
 import time
+from obs import ObsClient
+from obs import PutObjectHeader
+import os
+import traceback
 
-from selenium.webdriver.support.wait import WebDriverWait
 
-if __name__ == "__main__":
-    # The AK and SK used for authentication are hard-coded or stored in plaintext, which has great security risks. It is recommended that the AK and SK be stored in ciphertext in configuration files or environment variables and decrypted during use to ensure security.
-    # In this example, AK and SK are stored in environment variables for authentication. Before running this example, set environment variables CLOUD_SDK_AK and CLOUD_SDK_SK in the local environment
-    ak = "ORAEUEXV4RREC1ZFPEPN"
-    sk = "nUVOhC9fBe85rtfpiX3fyODtgRAEBlfpfxCqafiE"
+# user specific information
+ak = "ORAEUEXV4RREC1ZFPEPN"  # access key
+sk = "nUVOhC9fBe85rtfpiX3fyODtgRAEBlfpfxCqafiE"  # secret key
+region = "cn-north-4"
+#  server填写Bucket对应的Endpoint, 这里以华北-北京四为例，其他地区请按实际情况填写。
+obs_server = "https://obs.cn-north-4.myhuaweicloud.com"
+obs_bucket_name = "aeba"
 
+
+def summarizeText(title, content, length_limit=100, lang='zh'):
     credentials = BasicCredentials(ak, sk) \
 
     client = NlpClient.new_builder() \
         .with_credentials(credentials) \
-        .with_region(NlpRegion.value_of("cn-north-4")) \
+        .with_region(NlpRegion.value_of(region)) \
         .build()
 
     try:
         request = RunSummaryRequest()
         request.body = SummaryReq(
-            title="华为“刀片式基站”获2018年度国家科学技术进步奖一等奖",
-            length_limit=10000,
-            lang="zh",
-            content="华为刀片式基站解决方案是华为在深入理解客户诉求基础上,引领业界的创新解决方案。该方案采用统一的模块化设计,实现基站主要元素如射频、基带、电源、电池、微波、传输的刀片化,不同模块间的任意快速拼装组合无缝拼装,能灵活安装在抱杆,铁塔,墙面或者屋顶,“0”站址无需机房机柜,使基站的安装像拼装乐高积木一样简单便捷。刀片式基站同时支持2G/3G/4G等多制式,在多频多模网络发展策略下可以高效利用宝贵的站点资源,大幅降低站点获取难度和减少站点租金,帮助运营商应对移动网络快速增长的容量需求。同时刀片式基站采用自然散热,满足室外55°C高温环境,IP65防护等级,无需机房机柜和空调,其高能效和环境友好的特性,帮助运营商打造绿色移动网络。自2012年推出以来,刀片式基站全球累计已发货超1500万片,在全球超过170个国家310张运营商网络中成功商用部署。全球客户高度肯定了华为创新刀片式基站解决方案,它不但打破了传统机柜站点占地面积大、运维复杂的建站模式,而且还有效地提高了站点的部署效率,特别在密集城区、高铁场景下解决站点空间受限、实现快速部署、降低租赁成本等方面效果显著,同时也为乡村广覆盖场景提供最简单站点方案。在5G时代,华为围绕客户需求持续创新,在2018全球移动宽带论坛上,华为亦推出Super Blade Site——面向5G全室外站解决方案,其中包含最新支持5G容量要求的室外基带单元Blade BBU和有源天线一体化产品Blade AAU,该解决方案进一步匹配5G的最新技术要求和容量要求,极大降低5G引入对天面空间的需求,加速Massive MIMO部署,帮助运营商布局5G网络。华为Super Blade Site在2018全球移动宽带论坛上展出华为无线网络研发总裁郦舟剑表示,“华为一直致力于围绕客户需求持续创新,刀片式基站就是典型的例子。刀片式基站解决客户获取站址难题,帮助运营商快速建站,满足移动业务的迅猛增长的需求,也给客户带来商业成功。同时,面对即将到来的5G时代,华为持续创新,全室外刀片基站解决方案,将助力5G快速规模商用,帮助客户取得更大的商业成功。”国家科学技术进步奖,是国务院设立的国家科学技术奖5大奖项(国家最高科学技术奖、国家自然科学奖、国家技术发明奖、国家科学技术进步奖、国际科学技术合作奖)之一。该奖项授予在技术研究、技术开发、技术创新、推广应用先进科学技术成果、促进高新技术产业化,以及完成重大科学技术工程、计划等过程中做出创造性贡献的中国公民和组织。"
+            title=title,
+            length_limit=length_limit,
+            lang=lang,
+            content=content
         )
-        response = client.run_summary(request)
-        print(response)
+        response = client.run_summary(request)  # type:ignore
+        # print(type(response))
+        return response.to_dict().get('summary')
     except exceptions.ClientRequestException as e:
         print(e.status_code)
         print(e.request_id)
         print(e.error_code)
         print(e.error_msg)
+        raise e
+
+
+def uploadFileToOBS(file_path, content_type):
+    # 创建obsClient实例
+    obsClient = ObsClient(
+        access_key_id=ak,
+        secret_access_key=sk,
+        server=obs_server
+    )
+
+    try:
+        # 上传对象的附加头域
+        headers = PutObjectHeader()
+
+        # 【可选】待上传对象的MIME类型
+        headers.contentType = content_type
+
+        # 对象名，即上传后的文件名
+        objectKey = f"{int(time.time())}_{os.path.basename(file_path)}"
+
+        # 上传文件的自定义元数据
+        # metadata = {'meta1': 'value1', 'meta2': 'value2'}
+
+        # 文件上传
+        resp = obsClient.putFile(
+            obs_bucket_name, objectKey, file_path, headers
+        )
+
+        # 返回码为2xx时，接口调用成功，否则接口调用失败
+        if resp.status < 300:  # type:ignore
+            print('Put File Succeeded')
+            # print('requestId:', resp.requestId)  # type:ignore
+            # print('etag:', resp.body.etag)  # type:ignore
+            # print('versionId:', resp.body.versionId)  # type:ignore
+            # print('storageClass:', resp.body.storageClass)  # type:ignore
+            return objectKey
+        else:
+            print('Put File Failed')
+            # print('requestId:', resp.requestId)  # type:ignore
+            # print('errorCode:', resp.errorCode)  # type:ignore
+            # print('errorMessage:', resp.errorMessage)  # type:ignore
+    except Exception as e:
+        print('Put File Failed')
+        print(traceback.format_exc())
+        raise e
+
+
+def audio2Text(file_path, audio_format='audio/mpeg'):
+    global result
+    try:
+        obj_name = uploadFileToOBS(file_path, audio_format)
+
+        project_id = "65eec9da151845e39b812dbaa59ffa43"
+        obs_url = f"https://aeba.obs.cn-north-4.myhuaweicloud.com/{obj_name}"
+        obs_audio_format = 'auto'
+        # obs_property = 'chinese_8k_general'
+        obs_property = 'chinese_8k_common'
+
+        # step1 初始化客户端
+        config = SisConfig()
+
+        config.set_connect_timeout(10)       # 设置连接超时
+        config.set_read_timeout(10)         # 设置读取超时
+
+        asr_client = AsrCustomizationClient(
+            ak, sk, region,
+            project_id, sis_config=config
+        )
+
+        # step2 构造请求
+        asrc_request = AsrCustomLongRequest(
+            obs_audio_format, obs_property, obs_url
+        )
+
+        # 所有参数均可不设置，使用默认值
+        # 设置是否添加标点，yes or no，默认no
+        asrc_request.set_add_punc('yes')
+
+        # 设置是否将语音中数字转写为阿拉伯数字，yes or no，默认yes
+        asrc_request.set_digit_norm('yes')
+
+        # 设置 是否需要分析信息，True or False, 默认False。
+        # 只有need_analysis_info生效，diarization、channel、emotion、speed才会生效
+        # 目前仅支持8k模型，详见api文档
+        asrc_request.set_need_analysis_info(False)
+
+        # 设置是否需要话者分离，默认True，需要need_analysis_info设置为True才生效。
+        asrc_request.set_diarization(False)
+
+        # 设置声道信息, 一般都是单声道，默认为MONO，需要need_analysis_info设置为True才生效
+        asrc_request.set_channel('MONO')
+
+        # 设置是否返回感情信息, 默认True，需要need_analysis_info设置为True才生效。
+        asrc_request.set_emotion(True)
+
+        # 设置是否需要返回语速信息，默认True，需要need_analysis_info设置为True才生效。
+        asrc_request.set_speed(True)
+
+        asrc_request.set_need_word_info('no')
+
+        # step3 发送请求，获取job_id
+        job_id = asr_client.submit_job(asrc_request)
+
+        # step4 根据job_id轮询，获取结果。
+        status = 'WAITING'
+        count = 0   # 每2s查询一次，尝试2000次，即4000s。如果音频很长，可适当考虑加长一些。
+        while status != 'FINISHED' and count < 2000:
+            print(count, ' query')
+            result = asr_client.get_long_response(job_id)  # type:ignore
+            status = result.get('status')  # type:ignore
+            if status == 'ERROR':
+                # print('录音文件识别执行失败, %s' % json.dump(result))
+                print(result)  # type:ignore
+                break
+            time.sleep(2)
+            count += 1
+        if status != 'FINISHED':
+            print('录音文件识别未在 %d 内获取结果，job_id 为%s' % (count, job_id))
+        # result为json格式
+        # print(type(result))  # type:ignore
+        segments = result.get("segments")  # type:ignore
+        if len(segments) > 0:
+            return segments[0].get("result").get("text")
+        print(result)
+        print(segments)
+        print(json.dumps(result, indent=2, ensure_ascii=False))
+    except ClientException as e:
+        print(e)
+    except ServerException as e:
+        print(e)

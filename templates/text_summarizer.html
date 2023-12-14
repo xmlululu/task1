@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>文件上传与内容总结</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+</head>
+<style>
+    .uploaddiv{
+        text-align: center;
+        background-color: paleturquoise;
+    }
+    .ziti{
+         color: brown;
+         font-family: 'SimSun';
+         font-size:30px;
+         font-weight:bold;
+    }
+    .sum{
+         text-align: center;
+         background-color: beige;
+    }
+</style>
+<body>
+    <!-- 表单允许用户上传文件和输入文本 -->
+    <div class="uploaddiv">
+        <form id="upload-form" method="post" enctype="multipart/form-data">
+            <label>上传文件:</label>
+            <input type="file" name="text_file" id="text_file" accept=".txt" style="background-color: #ffff99"><br>
+            <label>输入文本:</label>
+            <textarea name="text_input" id="text_input" rows="4" cols="50"></textarea><br>
+            <label>输入链接:</label>
+            <input type="text" name="url_input" id="url_input" style="background-color: #ffff99"><br>
+            <label>希望概况的字数:</label>
+            <input type="number" name="summary_length" id="summary_length"><br>
+            <label>原文章字数:</label>
+            <span id="original_length">0</span> 字<br>
+            <!-- 触发总结功能的按钮 -->
+            <button type="button" id="summarize-btn" style="background-color: chartreuse;">一键总结</button>
+        </form>
+    </div>
+    <!-- 用于显示总结内容的区域 -->
+    <div class="sum"><span class="ziti">总结内容将在下面显示。</span></div>
+    <div id="summary-output">  </div>
+
+    <script>
+        $(document).ready(function(){
+            function updateOriginalLength() {
+                var text = $('#text_input').val() || '';
+                var file = $('#text_file').prop('files')[0];
+                if (file) {
+                    // 如果有文件，使用FileReader读取
+                    var reader = new FileReader();
+                    reader.onload = function(e) {
+                        var content = e.target.result;
+                        $('#original_length').text(content.length);
+                    };
+                    reader.readAsText(file);
+                } else {
+                    // 如果没有文件，直接使用文本框内容
+                    $('#original_length').text(text.length);
+                }
+            }
+            function resetPage() {
+                $('#upload-form')[0].reset(); // 重置表单
+                $('#original_length').text('0'); // 重置原文长度显示
+            }
+
+            $('#text_file, #text_input').on('change keyup', updateOriginalLength);
+
+            $('#summarize-btn').click(function(){
+                var formData = new FormData();
+                var file_data = $('#text_file').prop('files')[0];
+                var text_data = $('#text_input').val();
+                var url_data = $('#url_input').val();
+                var summary_length = $('#summary_length').val();
+                {#formData.append('file', file_data);#}
+                {#formData.append('text', text_data);#}
+                {#formData.append('url', url_data);#}
+                {#formData.append('summary_length', summary_length);#}
+                var nonEmptyInputs = 0;
+                nonEmptyInputs += (file_data && file_data.size > 0) ? 1 : 0;
+                nonEmptyInputs += (text_data && text_data.trim() !== '') ? 1 : 0;
+                nonEmptyInputs += (url_data && url_data.trim() !== '') ? 1 : 0;
+
+                // 确保只有一个输入项有数据
+                if (nonEmptyInputs !== 1) {
+                    alert('error：提供内容源数大于1，请只提供一个内容源（文件、文本或链接）。');
+                    return; // 阻止表单提交
+                }
+
+            // 根据所选的数据类型添加到 formData
+                if (file_data && file_data.size > 0) {
+                    formData.append('file', file_data);
+                } else if (text_data && text_data.trim() !== '') {
+                    formData.append('text', text_data);
+                } else {
+                    formData.append('url', url_data);
+                }
+                    formData.append('summary_length', summary_length);
+
+
+                $.ajax({
+                    type: 'POST',
+                    url: '/summarize',
+                    data: formData,
+                    contentType: false,
+                    processData: false,
+                    success: function(data) {
+                        $('#summary-output').text(data.summary);
+                        alert("总结成功。");
+                        resetPage(); // 总结完成后重置页面
+                    },
+                    error: function() {
+                        alert('生成总结时发生错误。');
+                        resetPage(); // 发生错误也需要重置页面
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
