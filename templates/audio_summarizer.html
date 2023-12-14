@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Audio Summarizer</title>
+  <!-- 引入jQuery库 -->
+  <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+</head>
+
+<body>
+  <form id="upload-form" method="post" enctype="multipart/form-data">
+    <label>上传文件:</label>
+    <input type="file" name="audio_file" id="audio_file"><br>
+    <!-- 触发总结功能的按钮 -->
+    <button type="button" id="summarize-btn">一键总结</button>
+  </form>
+  <!-- 用于显示总结内容的区域 -->
+  <div id="summary-output">总结内容将在这里显示。</div>
+
+  <!-- JavaScript代码处理表单提交和AJAX请求 -->
+  <script>
+    $(document).ready(function () {
+      $('#summarize-btn').click(function () {
+        // 创建FormData对象准备发送数据
+        var formData = new FormData();
+        var file_data = $('#audio_file').prop('files')[0] || ''; // 获取文件
+        formData.append('file', file_data); // 添加文件到表单数据中
+
+        // 发送AJAX请求到服务器
+        $.ajax({
+          type: 'POST',
+          url: '/summarize_audio',
+          data: formData,
+          contentType: false,
+          processData: false, // 告诉jQuery不要处理发送的数据
+          success: function (data) {
+            // 请求成功，显示总结内容
+            $('#summary-output').text(data.summary);
+          },
+          error: function () {
+            // 请求失败，显示错误信息
+            alert('生成总结时发生错误。');
+          }
+        });
+      });
+    });
+  </script>
+</body>
+
+</html>
