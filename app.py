@@ -1,20 +1,29 @@
-# app.py
 from flask import Flask, request, jsonify, render_template
+import api
 
 app = Flask(__name__)
 
 
 @app.route('/')
 def index():
-    # 渲染HTML页面
     return render_template('index.html')
+
+
+@app.route('/text', methods=['GET'])
+def textPage():
+    return render_template('text_summarizer.html')
+
+
+@app.route('/audio', methods=['GET'])
+def audioPage():
+    return render_template('audio_summarizer.html')
 
 
 @app.route('/summarize', methods=['POST'])
 def summarize():
     # 获取表单数据
-    text = request.form['text']
-    file = request.files['file']
+    text = request.form.get('text')
+    file = request.files.get('file')
 
     # 判断是处理文件还是文本
     if file:
@@ -24,13 +33,11 @@ def summarize():
         # 处理输入的文本
         content = text
     else:
-        # 如果没有内容，返回错误信息
         return jsonify({'summary': '没有提供内容。'})
 
     # 在这里添加你的文本总结逻辑
-    summary = '这里将显示文本的总结。'
+    summary = api.summarizeText(title='', content=content)
 
-    # 返回JSON响应
     return jsonify({'summary': summary})
 
 
