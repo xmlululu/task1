@@ -12,6 +12,8 @@
   <form id="upload-form" method="post" enctype="multipart/form-data">
     <label>上传文件:</label>
     <input type="file" name="audio_file" id="audio_file"><br>
+    <label>输入文本:</label>
+    <textarea name="text_input" id="text_input" rows="4" cols="50"></textarea><br>
     <!-- 触发总结功能的按钮 -->
     <button type="button" id="summarize-btn">一键总结</button>
   </form>
@@ -25,7 +27,9 @@
         // 创建FormData对象准备发送数据
         var formData = new FormData();
         var file_data = $('#audio_file').prop('files')[0] || ''; // 获取文件
+        var summary_length = parseInt($('#text_file').val());
         formData.append('file', file_data); // 添加文件到表单数据中
+        formData.append('summary_length', summary_length); // 添加文件到表单数据中
 
         // 发送AJAX请求到服务器
         $.ajax({

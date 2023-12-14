@@ -178,8 +178,3 @@ def audio2Text(file_path, audio_format='audio/mpeg'):
         print(e)
     except ServerException as e:
         print(e)
-
-
-def summarizeAudio(file_path):
-    text = audio2Text(file_path)
-    return summarizeText('', text)
