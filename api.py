@@ -3,6 +3,14 @@ from huaweicloudsdkcore.auth.credentials import BasicCredentials
 from huaweicloudsdknlp.v2.region.nlp_region import NlpRegion
 from huaweicloudsdkcore.exceptions import exceptions
 from huaweicloudsdknlp.v2 import *
+from selenium import webdriver
+from selenium.common.exceptions import TimeoutException
+from selenium.webdriver.common.by import By
+from selenium.webdriver.edge.options import Options
+from selenium.webdriver.support import expected_conditions as EC
+import time
+
+from selenium.webdriver.support.wait import WebDriverWait
 
 if __name__ == "__main__":
     # The AK and SK used for authentication are hard-coded or stored in plaintext, which has great security risks. It is recommended that the AK and SK be stored in ciphertext in configuration files or environment variables and decrypted during use to ensure security.

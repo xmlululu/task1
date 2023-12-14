@@ -1,69 +1,53 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>文件上传与内容总结</title>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
 </head>
 <body>
-    <form id="upload-form" method="post" enctype="multipart/form-data">
-        <label>上传文件:</label>
-        <input type="file" name="text_file" id="text_file"><br>
-        <label>输入文本:</label>
-        <textarea name="text_input" id="text_input" rows="4" cols="50"></textarea><br>
-        <label>希望概况的字数:</label>
-        <input type="number" name="summary_length" id="summary_length"><br>
-        <label>原文章字数:</label>
-        <span id="original_length">0</span> 字<br>
-        <button type="button" id="summarize-btn">一键总结</button>
-    </form>
-    <div id="summary-output">总结内容将在这里显示。</div>
-
-    <script>
-        $(document).ready(function(){
-            function updateOriginalLength() {
-                var text = $('#text_input').val() || '';
-                var file = $('#text_file').prop('files')[0];
-                if (file) {
-                    // 如果有文件，使用FileReader读取
-                    var reader = new FileReader();
-                    reader.onload = function(e) {
-                        var content = e.target.result;
-                        $('#original_length').text(content.length);
-                    };
-                    reader.readAsText(file);
-                } else {
-                    // 如果没有文件，直接使用文本框内容
-                    $('#original_length').text(text.length);
-                }
-            }
-
-            $('#text_file, #text_input').on('change keyup', updateOriginalLength);
-
-            $('#summarize-btn').click(function(){
-                var formData = new FormData();
-                var file_data = $('#text_file').prop('files')[0];
-                var text_data = $('#text_input').val();
-                var summary_length = $('#summary_length').val();
-                formData.append('file', file_data);
-                formData.append('text', text_data);
-                formData.append('summary_length', summary_length);
-
-                $.ajax({
-                    type: 'POST',
-                    url: '/summarize',
-                    data: formData,
-                    contentType: false,
-                    processData: false,
-                    success: function(data) {
-                        $('#summary-output').text(data.summary);
-                    },
-                    error: function() {
-                        alert('生成总结时发生错误。');
-                    }
-                });
-            });
-        });
-    </script>
+    <div class="box">
+        <div class="txt">
+            <h1 class="wenzi">文字识别</h1>
+            <a href="http://127.0.0.1:5000/txt">
+                <button style="color:rgb(128,128,128);width:150px;height: 100px;">点我进行文字识别！</button>
+            </a>
+        </div>
+        <div class="voice">
+            <h1 class="yinpin">音频识别</h1>
+            <a href="http://127.0.0.1:5000/voice">
+                <button style="color:rgb(128,128,128);width:150px;height: 100px;">点我进行音频识别！</button>
+            </a>
+        </div>
+    </div>
 </body>
+<style>
+    .box{
+        margin: 0% 30% 0% 30%;
+        width: 600px;
+        height: 300px;
+    }
+    .txt{
+        background-color:aquamarine;
+        text-align: center;
+        width: 300px;
+        height: 300px;
+        float: left;
+    }
+    .voice{
+        width: 300px;
+        height: 300px;
+        float: left;
+        background-color: darkkhaki;
+        text-align: center;
+    }
+    .yinpin{
+        color: red;
+        text-align: center;
+    }
+    .wenzi{
+        color: orchid;
+        text-align: center;
+    }
+</style>
 </html>
